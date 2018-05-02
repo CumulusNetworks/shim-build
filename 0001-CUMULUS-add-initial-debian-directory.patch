@@ -1,0 +1,452 @@
+From 62c91fe3d004d94a54908cd496d57591d5d46e9e Mon Sep 17 00:00:00 2001
+From: Curt Brune <curt@cumulusnetworks.com>
+Date: Mon, 7 May 2018 14:37:55 -0700
+Subject: [PATCH] [CUMULUS] add initial debian/ directory
+
+Add the usual suspects to the debian directory.
+
+As a starting point, use the files from the latest Ubuntu version,
+13-0ubuntu2.
+
+The 3 shim binaries, fbx64.efi, mmx64.efi and shimx64.efi are
+installed to /usr/share/shim.
+
+These binaries are unsigned.
+
+Partial-Close: CM-16645
+Signed-off-by: Curt Brune <curt@cumulusnetworks.com>
+---
+ debian/changelog               |   6 +
+ debian/compat                  |   1 +
+ debian/control                 |  17 +++
+ debian/copyright               | 272 +++++++++++++++++++++++++++++++++++++++++
+ debian/cumulus-uefi-cert.der   | Bin 0 -> 1497 bytes
+ debian/rules                   |  30 +++++
+ debian/shim-unsigned.install   |   1 +
+ debian/source/format           |   1 +
+ debian/source/include-binaries |   1 +
+ 9 files changed, 329 insertions(+)
+ create mode 100644 debian/changelog
+ create mode 100644 debian/compat
+ create mode 100644 debian/control
+ create mode 100644 debian/copyright
+ create mode 100644 debian/cumulus-uefi-cert.der
+ create mode 100755 debian/rules
+ create mode 100644 debian/shim-unsigned.install
+ create mode 100644 debian/source/format
+ create mode 100644 debian/source/include-binaries
+
+diff --git a/debian/changelog b/debian/changelog
+new file mode 100644
+index 000000000000..8010e117e145
+--- /dev/null
++++ b/debian/changelog
+@@ -0,0 +1,6 @@
++shim-unsigned (15-cl4u1) RELEASED; urgency=medium
++
++  * Initial release.
++  * Include the Cumulus Secure Boot public certificate.
++
++ -- dev-support <dev-support@cumulusnetworks.com>  Mon, 07 May 2018 14:16:11 -0700
+diff --git a/debian/compat b/debian/compat
+new file mode 100644
+index 000000000000..ec635144f600
+--- /dev/null
++++ b/debian/compat
+@@ -0,0 +1 @@
++9
+diff --git a/debian/control b/debian/control
+new file mode 100644
+index 000000000000..409f8fc1c1a7
+--- /dev/null
++++ b/debian/control
+@@ -0,0 +1,17 @@
++Source: shim-unsigned
++Section: admin
++Priority: optional
++Maintainer: dev-support <dev-support@cumulusnetworks.com>
++Standards-Version: 3.9.8
++Homepage: https://github.com/rhboot/shim
++Build-Depends: debhelper (>= 9), gnu-efi (>= 3.0.8-cl4u1), sbsigntool, openssl, libelf-dev
++
++Package: shim-unsigned
++Architecture: amd64
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: boot loader to chain-load signed boot loaders under Secure Boot
++ This package provides a minimalist boot loader which allows verifying
++ signatures of other UEFI binaries against either the Secure Boot DB/DBX or
++ against a built-in signature database.  Its purpose is to allow a small,
++ infrequently-changing binary to be signed by the UEFI CA, while allowing
++ an OS distributor to revision their main bootloader independently of the CA.
+diff --git a/debian/copyright b/debian/copyright
+new file mode 100644
+index 000000000000..8c538a17c82c
+--- /dev/null
++++ b/debian/copyright
+@@ -0,0 +1,272 @@
++Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
++Upstream-Name: shim
++Upstream-Contact: Matthew Garrett <mjg59@coreos.com>
++Source: https://github.com/mjg59/shim.git
++
++Files: *
++Copyright: 2012-2013 Red Hat, Inc
++	2009-2016 Intel Corporation
++License: BSD-2-Clause
++
++Files: crypt_blowfish.*
++Copyright: none
++License: public-domain
++  No copyright is claimed, and the software is hereby placed in the public
++  domain.  In case this attempt to disclaim copyright and place the software
++  in the public domain is deemed null and void, then the software is
++  Copyright (c) 2000-2011 Solar Designer and it is hereby released to the
++  general public under the following terms:
++  .
++  Redistribution and use in source and binary forms, with or without
++  modification, are permitted.
++  .
++  There's ABSOLUTELY NO WARRANTY, express or implied.
++
++Files: httpboot.*
++Copyright: 2015 SUSE LINUX GmbH
++License: BSD-2-Clause
++
++Files: include/Http.h
++Copyright: 2016 Intel Corporation
++	2015 Hewlett Packard Enterprise Development LP
++License: BSD-2-Clause
++
++Files: include/PeImage.h
++Copyright: 2006-2010 Intel Corporation
++	2008-2009 Apple Inc
++License: BSD-2-Clause
++
++Files: lib/*.c
++Copyright: 2011-2012 Intel Corporation
++	2012 <James.Bottomley@HansenPartnership.com>
++	2012-2013 Red Hat, Inc
++License: BSD-2-Clause
++
++Files: Cryptlib/OpenSSL/* Cryptlib/Include/openssl/*
++Copyright: 1998-2016 The OpenSSL Project
++	1995-1998 Eric Young (eay@cryptsoft.com)
++	2002 Sun Microsystems, Inc
++	2005 Nokia
++License: OpenSSL and Original-SSLeay
++ OpenSSL License
++ ---------------
++ Redistribution and use in source and binary forms, with or without
++ modification, are permitted provided that the following conditions
++ are met:
++ .
++ 1. Redistributions of source code must retain the above copyright
++    notice, this list of conditions and the following disclaimer.
++ .
++ 2. Redistributions in binary form must reproduce the above copyright
++    notice, this list of conditions and the following disclaimer in
++    the documentation and/or other materials provided with the
++    distribution.
++ .
++ 3. All advertising materials mentioning features or use of this
++    software must display the following acknowledgment:
++    "This product includes software developed by the OpenSSL Project
++    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
++ .
++ 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
++    endorse or promote products derived from this software without
++    prior written permission. For written permission, please contact
++    openssl-core@openssl.org.
++ .
++ 5. Products derived from this software may not be called "OpenSSL"
++    nor may "OpenSSL" appear in their names without prior written
++    permission of the OpenSSL Project.
++ .
++ 6. Redistributions of any form whatsoever must retain the following
++    acknowledgment:
++    "This product includes software developed by the OpenSSL Project
++    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
++ .
++ THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
++ EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
++ ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
++ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
++ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++ OF THE POSSIBILITY OF SUCH DAMAGE.
++ ====================================================================
++ .
++ This product includes cryptographic software written by Eric Young
++ (eay@cryptsoft.com).  This product includes software written by Tim
++ Hudson (tjh@cryptsoft.com).
++ .
++ Original SSLeay License
++ -----------------------
++ This package is an SSL implementation written
++ by Eric Young (eay@cryptsoft.com).
++ The implementation was written so as to conform with Netscapes SSL.
++ .
++ This library is free for commercial and non-commercial use as long as
++ the following conditions are aheared to.  The following conditions
++ apply to all code found in this distribution, be it the RC4, RSA,
++ lhash, DES, etc., code; not just the SSL code.  The SSL documentation
++ included with this distribution is covered by the same copyright terms
++ except that the holder is Tim Hudson (tjh@cryptsoft.com).
++ .
++ Copyright remains Eric Young's, and as such any Copyright notices in
++ the code are not to be removed.
++ If this package is used in a product, Eric Young should be given attribution
++ as the author of the parts of the library used.
++ This can be in the form of a textual message at program startup or
++ in documentation (online or textual) provided with the package.
++ .
++ Redistribution and use in source and binary forms, with or without
++ modification, are permitted provided that the following conditions
++ are met:
++ 1. Redistributions of source code must retain the copyright
++    notice, this list of conditions and the following disclaimer.
++ 2. Redistributions in binary form must reproduce the above copyright
++    notice, this list of conditions and the following disclaimer in the
++    documentation and/or other materials provided with the distribution.
++ 3. All advertising materials mentioning features or use of this software
++    must display the following acknowledgement:
++    "This product includes cryptographic software written by
++     Eric Young (eay@cryptsoft.com)"
++    The word 'cryptographic' can be left out if the rouines from the library
++    being used are not cryptographic related :-).
++ 4. If you include any Windows specific code (or a derivative thereof) from
++    the apps directory (application code) you must include an acknowledgement:
++    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
++ .
++ THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
++ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
++ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ SUCH DAMAGE.
++ .
++ The licence and distribution terms for any publically available version or
++ derivative of this code cannot be changed.  i.e. this code cannot simply be
++ copied and put under another distribution licence
++ [including the GNU Public Licence.]
++
++Files: Cryptlib/Include/openssl/seed.h
++Copyright: 2007 KISA(Korea Information Security Agency)
++License: BSD-2-Clause
++
++Files: Cryptlib/OpenSSL/crypto/o_dir.h Cryptlib/OpenSSL/crypto/LPdir_nyi.c
++Copyright: 2004, Richard Levitte <richard@levitte.org>
++License: BSD-2-Clause
++
++Files: Cryptlib/OpenSSL/crypto/x509v3/v3_pci.c Cryptlib/OpenSSL/crypto/x509v3/v3_pcia.c
++Copyright: 2004 Kungliga Tekniska Högskolan
++License: BSD-3-Clause-Institute
++  Redistribution and use in source and binary forms, with or without
++  modification, are permitted provided that the following conditions
++  are met:
++  .
++  1. Redistributions of source code must retain the above copyright
++     notice, this list of conditions and the following disclaimer.
++  .
++  2. Redistributions in binary form must reproduce the above copyright
++     notice, this list of conditions and the following disclaimer in the
++     documentation and/or other materials provided with the distribution.
++  .
++  3. Neither the name of the Institute nor the names of its contributors
++     may be used to endorse or promote products derived from this software
++     without specific prior written permission.
++  .
++  THIS SOFTWARE IS PROVIDED BY THE INSTITUTE AND CONTRIBUTORS ``AS IS'' AND
++  ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++  ARE DISCLAIMED.  IN NO EVENT SHALL THE INSTITUTE OR CONTRIBUTORS BE LIABLE
++  FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++  DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++  OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++  HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++  OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++  SUCH DAMAGE.
++
++Files: Cryptlib/OpenSSL/crypto/bn/rsaz_exp.h
++Copyright: 2012, Intel Corporation
++License: BSD-3-Clause-Intel
++ Redistribution and use in source and binary forms, with or without
++ modification, are permitted provided that the following conditions are
++ met:
++ .
++ *  Redistributions of source code must retain the above copyright
++    notice, this list of conditions and the following disclaimer.
++ .
++ *  Redistributions in binary form must reproduce the above copyright
++    notice, this list of conditions and the following disclaimer in the
++    documentation and/or other materials provided with the
++    distribution.
++ .
++ *  Neither the name of the Intel Corporation nor the names of its
++    contributors may be used to endorse or promote products derived from
++    this software without specific prior written permission.
++ .
++ THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION ""AS IS"" AND ANY
++ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL INTEL CORPORATION OR
++ CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
++ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++
++License: BSD-2-Clause
++ Redistribution and use in source and binary forms, with or without
++ modification, are permitted provided that the following conditions
++ are met:
++ .
++ Redistributions of source code must retain the above copyright
++ notice, this list of conditions and the following disclaimer.
++ .
++ Redistributions in binary form must reproduce the above copyright
++ notice, this list of conditions and the following disclaimer in the
++ documentation and/or other materials provided with the
++ distribution.
++ .
++ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
++ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
++ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
++ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
++ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
++ OF THE POSSIBILITY OF SUCH DAMAGE.
++
++Files: debian/*
++Copyright: 2018 Cumulus Networks, Inc.
++License: GPL-2
++
++License: GPL-2
++ This program is free software; you can redistribute it and/or modify it
++ under the terms of version 2 of the GNU General Public License as published
++ by the Free Software Foundation.
++ .
++ This program is distributed in the hope that it will be useful, but WITHOUT
++ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ more details.
++ .
++ You should have received a copy of the GNU General Public License
++ along with this program; if not, write to the Free Software
++ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++ .
++ On Debian systems, the full text of the GNU General Public
++ License version 2 can be found in the file
++ `/usr/share/common-licenses/GPL-2'.
+diff --git a/debian/cumulus-uefi-cert.der b/debian/cumulus-uefi-cert.der
+new file mode 100644
+index 0000000000000000000000000000000000000000..b305b63f7bbcabdea9419e6691ff9a181cd8f53c
+GIT binary patch
+literal 1497
+zcmXqLV!dk6#JqO_GZP~d6DPw`#*f_b&lh|$;AP{~YV&CO&dbQi&B|cVILDCNfRl|m
+zl!Z;0DKywn*gz1(;o#wNPRz+n%P-2yOf(cT5CI9Y^YHrSm*$luX67k`Wu}%J${Wan
+z#JPCHoJ(^{b4rU9{8CHG^NX^Jbrd}FlJyMj4QxRQn0d_56(|H0<)@S;mt^MWDLAJV
+zm1L%6CMTApDma#wWaJlRmQ*Sj85mj^$cgg;NmD};LsL@=Lz5_RUSlBFz!J(eXq-e#
+z=bIWBL!7UJ&-uZr$)!c93Qqa?B@jn9F)ASkGb1Yla}y&!gFzD`7gG}>Bg4h!?)cOb
+zH}`yeB6lfJmUG^}=+?&h8P{$ekzDaRfz$M#CBu8}x0h-{KPl+-1=-l2*193ET6$sn
+z%E>NwPOE;M#BOWr+vYOilXpo0<IHN;<1UwTzF&Hvvps<AV$yuAM}dx^Df23AjdLDe
+zU&qh$?9Df;n*VW?qD@wDUNY;7-UX;I@JO88_f@Z8rn>c0aWl3(N)qdvUzt5W@t-rJ
+zu|J3@srs8|p8F%65WnK+vucYp7PntHWXHW|=llnZ(`D{VXDPN@t8!vR{DHM|_4|w-
+z`JCDP_LiR0#XROnwT<(SM7k`_Zc&VBn)S#za$2I`wx|8tmeZ^H{bn9L5P0f9`Rd8V
+zbKmeYF*7nSE^cB}0EUQ+0Y5N^WrZ0T|Ff_fFas$AZjb;!3kxviwt*9vEFX&)i^#v!
+ze(@EY>b%{%V;23{U)C%lf1<=d9;8;8MZ!R=K_q<dy|$K;^|fK<3l|k`ee^VGjZm#Y
+zI7op!OMro&fzJZ31s-i~86_nJR{Hwo<>h+GkW`xoO|*K+`MLT9*_ryuMLGJ=7}tfR
+zXkA2t)dR{KB(rg7voW%=vNJNWgd2n!1jG0SOl|JO*a1xR1S}~*PDQ}X%G|`n$S~RV
+ze228~szq;Elm0#vxy66O`K8&%Kg~(1U!Si_E3nIS*mv&Ryh6zh=?8Cq3yP7+6D?hp
+zzUz?p{B3z*yyx}!mx#wqeg7*_YGQ`yvR@1HkDX<hqoufHZ6#BBz_Pblk>@2pYh960
+zUil>cL0|f&Ia6QWcHCqsvEr=$giU#7HKm1We&$v8TTk&UT=h5YZS)$Zze_Goe!Ef8
+z(yd(a{EDROEQvX#H*RGqDgOF8(ffw#Z6>|e?Pt!bm9vRIzIe`V(`&B97O^HzDp_CL
+ze6v=+Dfy$ge%x1<!_Q{?toDj!eyg(drKLglp782fuG7EdebYFga8~8tT<@!bDeIq3
+z(aB7<s|%SDzN%F%`;Ne(uC0A8PTB#r*B89~IgL4czU%y60jau0mt@_O|GIATpKX?~
+z^vIe?^^e|9o7__V)@6g8nVxyWiuJc2onu;jc<08uGuSp?yLa8^<3C$&*^uhsm{|35
+zS&_k#t8#y@FxH>iW6ykl_UykWj>~vu@7eh*cXH5vANOC6ywYU~m(|<mw@uI9RQbnn
+z`JSus<~Q!%TQkM+?X`IB$PLS<7#MB{e;!w1wD?!$RgISI+ePM0Q9boCw!zq7u~aO3
+zzdI+l-glwws@NTYhm_J<%R>`*mPXqpztxcMd@1B-lGcBuWxv&vxn=FQ|2|h=c%|3F
+X)FZ$8_}L@J*xf>=wrMrwN%sK&H;PMz
+
+literal 0
+HcmV?d00001
+
+diff --git a/debian/rules b/debian/rules
+new file mode 100755
+index 000000000000..f7f15cfd23d2
+--- /dev/null
++++ b/debian/rules
+@@ -0,0 +1,30 @@
++#!/usr/bin/make -f
++
++distributor=cumulus
++cert=debian/cumulus-uefi-cert.der
++
++ifeq ($(DEB_HOST_ARCH),amd64)
++export EFI_ARCH := x64
++endif
++
++COMMON_OPTIONS = \
++	MAKELEVEL=0 \
++	EFI_PATH=/usr/lib \
++	VENDOR_CERT_FILE=$(cert) \
++	EFIDIR=$(distributor) \
++	ENABLE_SBSIGN=true \
++	ENABLE_HTTPBOOT=true \
++	COMMIT_ID=master \
++	$(NULL)
++
++%:
++	dh $@ --parallel
++
++override_dh_auto_clean:
++	dh_auto_clean -- MAKELEVEL=0
++
++override_dh_auto_build:
++	dh_auto_build -- $(COMMON_OPTIONS)
++
++override_dh_auto_install:
++	$(MAKE) install-as-data DESTDIR=debian/tmp DATATARGETDIR=usr/share/shim $(COMMON_OPTIONS)
+diff --git a/debian/shim-unsigned.install b/debian/shim-unsigned.install
+new file mode 100644
+index 000000000000..9d46cb90f15b
+--- /dev/null
++++ b/debian/shim-unsigned.install
+@@ -0,0 +1 @@
++debian/tmp/usr/share/shim         /usr/share
+diff --git a/debian/source/format b/debian/source/format
+new file mode 100644
+index 000000000000..af745b310bc8
+--- /dev/null
++++ b/debian/source/format
+@@ -0,0 +1 @@
++3.0 (git)
+diff --git a/debian/source/include-binaries b/debian/source/include-binaries
+new file mode 100644
+index 000000000000..c267a47c08d7
+--- /dev/null
++++ b/debian/source/include-binaries
+@@ -0,0 +1 @@
++debian/cumulus-uefi-cert.der
+-- 
+2.1.4
+
