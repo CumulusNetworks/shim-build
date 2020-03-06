@@ -5,7 +5,7 @@
 FROM debian:9
 
 # Add initial development packages
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get --no-install-recommends install -y \
     build-essential util-linux sudo libelf-dev \
     openssh-client sbsigntool gcc-multilib debhelper
 
